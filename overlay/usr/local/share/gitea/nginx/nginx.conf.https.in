@@ -1,0 +1,31 @@
+# @@TEMPLATE@@
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  server {
+    listen 80 default_server;
+    server_name _;
+
+    return 301 https://$host$request_uri;
+  }
+
+  server {
+    listen 443 ssl;
+    server_name @@gitea_domain@@;
+
+    ssl_certificate      cert.pem;
+    ssl_certificate_key  key.pem;
+
+    ssl_session_cache    shared:SSL:1m;
+    ssl_session_timeout  5m;
+
+    location / {
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_pass http://@@gitea_http_addr@@:3000;
+    }
+  }
+}

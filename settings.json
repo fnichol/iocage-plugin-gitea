@@ -1,1 +1,5 @@
-{}
+{
+	"servicerestart": "service gitea restart",
+	"serviceget": "/usr/local/bin/pluginget"
+	}
+}

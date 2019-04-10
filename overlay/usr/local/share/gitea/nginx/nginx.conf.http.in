@@ -1,0 +1,18 @@
+# @@TEMPLATE@@
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  server {
+    listen 80 default_server;
+    server_name _;
+
+    location / {
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_pass http://@@gitea_http_addr@@:3000;
+    }
+  }
+}

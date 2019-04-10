@@ -1,0 +1,66 @@
+# @@TEMPLATE@@
+
+APP_NAME = @@gitea_app_name@@
+RUN_USER = @@gitea_user@@
+RUN_MODE = prod
+
+[security]
+INTERNAL_TOKEN = @@gitea_internal_token@@
+INSTALL_LOCK   = true
+SECRET_KEY     = @@gitea_secret_key@@
+
+[database]
+DB_TYPE  = sqlite3
+HOST     = 127.0.0.1:3306
+NAME     = gitea
+USER     = gitea
+PASSWD   = 
+SSL_MODE = disable
+PATH     = @@gitea_work_dir@@/data/gitea.db
+
+[repository]
+ROOT = @@gitea_user_home@@/gitea-repositories
+
+[server]
+DOMAIN              = @@gitea_domain@@
+HTTP_ADDR           = @@gitea_http_addr@@
+HTTP_PORT           = 3000
+ROOT_URL            = @@gitea_protocol@@://%(DOMAIN)s/
+DISABLE_SSH         = false
+SSH_PORT            = 22
+LFS_START_SERVER    = true
+LFS_CONTENT_PATH    = @@gitea_work_dir@@/data/lfs
+LFS_JWT_SECRET      = @@gitea_lfs_jwt_secret@@
+OFFLINE_MODE        = false
+STATIC_ROOT_PATH    = /usr/local/share/gitea
+
+[mailer]
+ENABLED = false
+
+[service]
+REGISTER_EMAIL_CONFIRM            = false
+ENABLE_NOTIFY_MAIL                = false
+DISABLE_REGISTRATION              = false
+ALLOW_ONLY_EXTERNAL_REGISTRATION  = false
+ENABLE_CAPTCHA                    = false
+REQUIRE_SIGNIN_VIEW               = false
+DEFAULT_KEEP_EMAIL_PRIVATE        = false
+DEFAULT_ALLOW_CREATE_ORGANIZATION = true
+DEFAULT_ENABLE_TIMETRACKING       = true
+NO_REPLY_ADDRESS                  = noreply.example.org
+
+[picture]
+DISABLE_GRAVATAR        = false
+ENABLE_FEDERATED_AVATAR = true
+
+[openid]
+ENABLE_OPENID_SIGNIN = true
+ENABLE_OPENID_SIGNUP = true
+
+[session]
+PROVIDER = file
+
+[log]
+MODE      = file
+LEVEL     = Info
+ROOT_PATH = @@gitea_work_dir@@/log

@@ -1,0 +1,31 @@
+#!/bin/sh
+# shellcheck disable=SC2039
+
+main() {
+  set -eu
+  if [ -n "${DEBUG:-}" ]; then
+    set -x
+  fi
+
+  local cfg_path="${CFG_PATH:-/var/db/gitea/iocage-plugin}"
+
+  set_value_for_key "$cfg_path" "$1" "$2"
+}
+
+set_value_for_key() {
+  local cfg_path="$1"
+  local key="$2"
+  local value="$3"
+
+  if [ ! -d "$cfg_path" ]; then
+    mkdir -p "$cfg_path"
+    chmod 0700 "$cfg_path"
+  fi
+
+  echo "$value" >"$cfg_path/.$key"
+  chmod 0600 "$cfg_path/.$key"
+  mv -f "$cfg_path/.$key" "$cfg_path/$key"
+  echo "Set plugin config, $key='$value'"
+}
+
+main "$@"
