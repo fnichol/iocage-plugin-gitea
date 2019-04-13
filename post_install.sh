@@ -26,7 +26,6 @@ gitea_lfs_jwt_secret="$(gitea generate secret LFS_JWT_SECRET)"
 
 mkdir -p "$gitea_work_dir/custom/conf" "$gitea_work_dir/data" "$gitea_work_dir/log"
 chown -R "$gitea_user" "$gitea_work_dir"
-mkdir -p "$gitea_work_dir/custom/https"
 chmod -R 0750 "$gitea_work_dir"
 echo "Created initial state and data directories under $gitea_work_dir"
 
