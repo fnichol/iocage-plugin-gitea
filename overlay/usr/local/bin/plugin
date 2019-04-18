@@ -1,0 +1,711 @@
+#!/bin/sh
+# shellcheck disable=SC2039
+#
+# MIT License
+#
+# Copyright (c) 2019 Fletcher Nichol
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+main() {
+  set -eu
+  if [ -n "${DEBUG:-}" ]; then
+    set -x
+  fi
+
+  PROGRAM="$(basename "$0")"
+  VERSION="1.0.0"
+  AUTHOR="Fletcher Nichol <fnichol@nichol.ca>"
+
+  local cfg_path="${CFG_PATH:-/var/db/iocage-plugin}"
+
+  invoke_top "$cfg_path" "$@"
+}
+
+print_usage_top() {
+  echo "$PROGRAM $VERSION
+
+$AUTHOR
+
+iocage plugin management
+
+USAGE:
+        $PROGRAM [FLAGS] <SUBCOMMAND> [ARG ..]
+
+FLAGS:
+    -h, --help      Prints help information
+    -v, --version   Prints version information
+
+SUBCOMMANDS:
+    config    Manages plugin config
+    help      Prints help information
+    services  Manages plugin services
+    template  Manages plugin templates
+    version   Prints version information
+
+SUBCOMMAND HELP:
+    $PROGRAM <SUBCOMMAND> --help
+"
+}
+
+print_usage_config() {
+  local subcmd="config"
+
+  echo "${PROGRAM}-$(echo "$subcmd" | tr ' ' '-') $VERSION
+
+$AUTHOR
+
+iocage plugin management - manages plugin config
+
+USAGE:
+        $PROGRAM $subcmd [FLAGS] <KEY>
+
+FLAGS:
+    -h, --help      Prints help information
+
+SUBCOMMANDS:
+    get       Gets a config value
+    help      Prints help information
+    set       Sets a config value
+
+SUBCOMMAND HELP:
+    $PROGRAM $subcmd <SUBCOMMAND> --help
+"
+}
+
+print_usage_config_get() {
+  local subcmd="config get"
+
+  echo "${PROGRAM}-$(echo "$subcmd" | tr ' ' '-') $VERSION
+
+$AUTHOR
+
+iocage plugin management - gets a config value
+
+USAGE:
+        $PROGRAM $subcmd [FLAGS] <KEY>
+
+FLAGS:
+    -a, --all       Prints all keys and values in the form \`key='value'\`
+    -k, --keys      Prints all keys
+    -h, --help      Prints help information
+
+ARGS:
+    <KEY>   Configuration key name
+
+ENVIRONMENT VARIABLES:
+    CFG_PATH  Override the path for the plugin metadata to be stored
+              [default: /var/db/iocage-plugin]
+"
+}
+
+print_usage_config_set() {
+  local subcmd="config set"
+
+  echo "${PROGRAM}-$(echo "$subcmd" | tr ' ' '-') $VERSION
+
+$AUTHOR
+
+iocage plugin management - sets a config value
+
+USAGE:
+        $PROGRAM $subcmd [FLAGS] <KEY> <VALUE>
+
+FLAGS:
+    -h, --help      Prints help information
+
+ARGS:
+    <KEY>     Configuration key name
+    <VALUE>   Value to store for key
+
+ENVIRONMENT VARIABLES:
+    CFG_PATH  Override the path for the plugin metadata to be stored
+              [default: /var/db/iocage-plugin]
+"
+}
+
+print_usage_services() {
+  local subcmd="services"
+
+  echo "${PROGRAM}-$(echo "$subcmd" | tr ' ' '-') $VERSION
+
+$AUTHOR
+
+iocage plugin management - manages plugin services
+
+USAGE:
+        $PROGRAM $subcmd [FLAGS] <KEY>
+
+FLAGS:
+    -h, --help      Prints help information
+
+SUBCOMMANDS:
+    get       Lists all services for the plugin
+    help      Prints help information
+    restart   Restarts all services for the plugin
+    set       Sets the list of services
+
+SUBCOMMAND HELP:
+    $PROGRAM $subcmd <SUBCOMMAND> --help
+"
+}
+
+print_usage_services_get() {
+  local subcmd="services get"
+
+  echo "${PROGRAM}-$(echo "$subcmd" | tr ' ' '-') $VERSION
+
+$AUTHOR
+
+iocage plugin management - lists all services for the plugin
+
+USAGE:
+        $PROGRAM $subcmd [FLAGS]
+
+FLAGS:
+    -h, --help      Prints help information
+
+ENVIRONMENT VARIABLES:
+    CFG_PATH  Override the path for the plugin metadata to be stored
+              [default: /var/db/iocage-plugin]
+"
+}
+
+print_usage_services_restart() {
+  local subcmd="services restart"
+
+  echo "${PROGRAM}-$(echo "$subcmd" | tr ' ' '-') $VERSION
+
+$AUTHOR
+
+iocage plugin management - restarts all services for the plugin
+
+USAGE:
+        $PROGRAM $subcmd [FLAGS]
+
+FLAGS:
+    -h, --help      Prints help information
+
+ENVIRONMENT VARIABLES:
+    CFG_PATH  Override the path for the plugin metadata to be stored
+              [default: /var/db/iocage-plugin]
+"
+}
+
+print_usage_services_set() {
+  local subcmd="services set"
+
+  echo "${PROGRAM}-$(echo "$subcmd" | tr ' ' '-') $VERSION
+
+$AUTHOR
+
+iocage plugin management - sets the list of services
+
+USAGE:
+        $PROGRAM $subcmd [FLAGS] [<SERVICE> ..]
+
+FLAGS:
+    -h, --help      Prints help information
+
+ENVIRONMENT VARIABLES:
+    CFG_PATH  Override the path for the plugin metadata to be stored
+              [default: /var/db/iocage-plugin]
+"
+}
+
+print_usage_template() {
+  local subcmd="template"
+
+  echo "${PROGRAM}-$(echo "$subcmd" | tr ' ' '-') $VERSION
+
+$AUTHOR
+
+iocage plugin management - manages plugin templates
+
+USAGE:
+        $PROGRAM $subcmd [FLAGS] <KEY>
+
+FLAGS:
+    -h, --help      Prints help information
+
+SUBCOMMANDS:
+    help      Prints help information
+    render    Renders a template using config metadata
+
+SUBCOMMAND HELP:
+    $PROGRAM $subcmd <SUBCOMMAND> --help
+"
+}
+
+print_usage_template_render() {
+  local subcmd="template render"
+
+  echo "${PROGRAM}-$(echo "$subcmd" | tr ' ' '-') $VERSION
+
+$AUTHOR
+
+iocage plugin management - renders a template using config metadata
+
+USAGE:
+        $PROGRAM $subcmd [FLAGS] <TEMPLATE> [<OUTPUT>]
+
+FLAGS:
+    -h, --help      Prints help information
+
+ARGS:
+    <TEMPLATE>  Template file to use as input
+    <OUTPUT>    File to write rendered output. If omitted, rendered output
+                is printed to STDOUT.
+
+ENVIRONMENT VARIABLES:
+    CFG_PATH  Override the path for the plugin metadata to be stored
+              [default: /var/db/iocage-plugin]
+"
+}
+
+invoke_top() {
+  local cfg_path="$1"
+  shift
+
+  if [ -z "${1:-}" ]; then
+    print_usage_top >&2
+    echo
+    echo "xxx missing argument" >&2
+    echo
+    return 1
+  fi
+
+  case "${1:-}" in
+    config)
+      shift
+      invoke_config "$cfg_path" "$@"
+      ;;
+    services)
+      shift
+      invoke_services "$cfg_path" "$@"
+      ;;
+    template)
+      shift
+      invoke_template "$cfg_path" "$@"
+      ;;
+    --help | -h | help)
+      print_usage_top
+      exit 0
+      ;;
+    --version | -v | version)
+      echo "$PROGRAM $VERSION"
+      ;;
+    *)
+      print_usage_top >&2
+      echo
+      echo "xxx Invalid argument: ${1:-}" >&2
+      echo
+      return 1
+      ;;
+  esac
+}
+
+invoke_config() {
+  local cfg_path="$1"
+  shift
+
+  if [ -z "${1:-}" ]; then
+    print_usage_config >&2
+    echo
+    echo "xxx missing argument" >&2
+    echo
+    return 1
+  fi
+
+  case "$1" in
+    get)
+      shift
+      invoke_config_get "$cfg_path" "$@"
+      ;;
+    set)
+      shift
+      invoke_config_set "$cfg_path" "$@"
+      ;;
+    --help | -h | help)
+      print_usage_config
+      exit 0
+      ;;
+    --version | -v | version)
+      echo "$PROGRAM $VERSION"
+      ;;
+    *)
+      print_usage_config >&2
+      echo
+      echo "xxx Invalid argument: ${1:-}" >&2
+      echo
+      return 1
+      ;;
+  esac
+}
+
+invoke_config_get() {
+  local cfg_path="$1"
+  shift
+
+  if [ -z "${1:-}" ]; then
+    print_usage_config_get >&2
+    echo
+    echo "xxx missing argument" >&2
+    echo
+    return 1
+  fi
+
+  case "$1" in
+    --all | -a)
+      get_all_values "$cfg_path"
+      ;;
+    --keys | -k)
+      get_all_keys "$cfg_path"
+      ;;
+    --help | -h | help)
+      print_usage_config_get
+      return 0
+      ;;
+    *)
+      get_value_from_key "$cfg_path" "$1"
+      ;;
+  esac
+}
+
+invoke_config_set() {
+  local cfg_path="$1"
+  shift
+
+  if [ -z "${1:-}" ]; then
+    print_usage_config_set >&2
+    echo
+    echo "xxx missing key argument" >&2
+    echo
+    return 1
+  fi
+
+  case "$1" in
+    --help | -h | help)
+      print_usage_config_set
+      return 0
+      ;;
+    *)
+      if [ -z "${2:-}" ]; then
+        print_usage_config_set >&2
+        echo
+        echo "xxx missing value argument" >&2
+        echo
+        return 1
+      fi
+
+      set_value_for_key "$cfg_path" "$1" "$2"
+      echo "config key set; $1='$2'"
+      ;;
+  esac
+}
+
+invoke_services() {
+  local cfg_path="$1"
+  shift
+
+  if [ -z "${1:-}" ]; then
+    print_usage_services >&2
+    echo
+    echo "xxx missing argument" >&2
+    echo
+    return 1
+  fi
+
+  case "$1" in
+    get)
+      shift
+      invoke_services_get "$cfg_path" "$@"
+      ;;
+    restart)
+      shift
+      invoke_services_restart "$cfg_path" "$@"
+      ;;
+    set)
+      shift
+      invoke_services_set "$cfg_path" "$@"
+      ;;
+    --help | -h | help)
+      print_usage_services
+      exit 0
+      ;;
+    --version | -v | version)
+      echo "$PROGRAM $VERSION"
+      ;;
+    *)
+      print_usage_services >&2
+      echo
+      echo "xxx Invalid argument: ${1:-}" >&2
+      echo
+      return 1
+      ;;
+  esac
+}
+
+invoke_services_get() {
+  local cfg_path="$1"
+  shift
+
+  if [ -n "${1:-}" ]; then
+    case "$1" in
+      --help | -h | help)
+        print_usage_services_get
+        return 0
+        ;;
+      *)
+        print_usage_services_get >&2
+        echo
+        echo "xxx Invalid argument: ${1:-}" >&2
+        echo
+        return 1
+        ;;
+    esac
+  fi
+
+  local services
+  services="$(get_value_from_key "$cfg_path" __plugin_services 2>/dev/null \
+    || echo)"
+
+  if [ -n "$services" ]; then
+    list_services "$services"
+  fi
+}
+
+invoke_services_restart() {
+  local cfg_path="$1"
+  shift
+
+  if [ -n "${1:-}" ]; then
+    case "$1" in
+      --help | -h | help)
+        print_usage_services_restart
+        return 0
+        ;;
+      *)
+        print_usage_services_restart >&2
+        echo
+        echo "xxx Invalid argument: ${1:-}" >&2
+        echo
+        return 1
+        ;;
+    esac
+  fi
+
+  local services
+  services="$(get_value_from_key "$cfg_path" __plugin_services 2>/dev/null \
+    || echo)"
+
+  if [ -z "$services" ]; then
+    echo "no services to restart, done."
+  else
+    restart_services "$services"
+  fi
+}
+
+invoke_services_set() {
+  local cfg_path="$1"
+  shift
+
+  if [ -n "${1:-}" ]; then
+    case "$1" in
+      --help | -h | help)
+        print_usage_services_set
+        return 0
+        ;;
+    esac
+  else
+    print_usage_services_set >&2
+    echo
+    echo "xxx missing argument" >&2
+    echo
+    return 1
+  fi
+
+  local value
+  value="$(echo "$@" | tr ' ' ',')"
+
+  set_value_for_key "$cfg_path" __plugin_services "$value"
+  echo "services set; services='$value'"
+}
+
+invoke_template() {
+  local cfg_path="$1"
+  shift
+
+  if [ -z "${1:-}" ]; then
+    print_usage_template >&2
+    echo
+    echo "xxx missing argument" >&2
+    echo
+    return 1
+  fi
+
+  case "$1" in
+    render)
+      shift
+      invoke_template_render "$cfg_path" "$@"
+      ;;
+    --help | -h | help)
+      print_usage_template
+      exit 0
+      ;;
+    --version | -v | version)
+      echo "$PROGRAM $VERSION"
+      ;;
+    *)
+      print_usage_template >&2
+      echo
+      echo "xxx Invalid argument: ${1:-}" >&2
+      echo
+      return 1
+      ;;
+  esac
+}
+
+invoke_template_render() {
+  local cfg_path="$1"
+  shift
+
+  if [ -z "${1:-}" ]; then
+    print_usage_template_render >&2
+    echo
+    echo "xxx missing argument" >&2
+    echo
+    return 1
+  fi
+
+  case "$1" in
+    --help | -h | help)
+      print_usage_template_render
+      return 0
+      ;;
+    *)
+      if [ -n "${2:-}" ]; then
+        write_file "$cfg_path" "$1" "$2"
+      else
+        render_template "$cfg_path" "$1"
+      fi
+      ;;
+  esac
+}
+
+get_all_keys() {
+  local cfg_path="$1"
+
+  if [ -d "$cfg_path" ]; then
+    find "$cfg_path" -type f -depth 1 ! -name '__*' -exec basename {} \;
+  fi
+}
+
+get_all_values() {
+  local cfg_path="$1"
+  local value
+
+  get_all_keys "$cfg_path" | while read -r key; do
+    value="$(get_value_from_key "$cfg_path" "$key")"
+    echo "$key='$value'"
+  done
+}
+
+get_value_from_key() {
+  local cfg_path="$1"
+  local key="$2"
+
+  if [ -f "$cfg_path/$key" ]; then
+    cat "$cfg_path/$key"
+  else
+    echo "xxx config key not found; key=$key cfg_path=$cfg_path" >&2
+    return 1
+  fi
+}
+
+list_services() {
+  local services="$1"
+  local service
+
+  for service in $(echo "$services" | tr ',' ' '); do
+    echo "$service"
+  done
+}
+
+set_value_for_key() {
+  local cfg_path="$1"
+  local key="$2"
+  local value="$3"
+
+  if [ ! -d "$cfg_path" ]; then
+    mkdir -p "$cfg_path"
+    chmod 0700 "$cfg_path"
+  fi
+
+  echo "$value" >"$cfg_path/.$key"
+  chmod 0600 "$cfg_path/.$key"
+  mv -f "$cfg_path/.$key" "$cfg_path/$key"
+}
+
+render_template() {
+  local cfg_path="$1"
+  local template="$2"
+  template="$(stat -f%R "$2")"
+
+  # Load all `key='value'` entries into this process as shell variables
+  eval "$(get_all_values "$cfg_path")"
+
+  # For each key, add a `sed` substitution for a `@@$key@@` token with its
+  # value to a `sed` command string, and finally invoke the `sed` command
+  get_all_keys "$cfg_path" | {
+    local args msg value
+    msg="Generated from $template."
+    msg="$msg Edit the template not this file or changes will be lost."
+    args="-e 's,@@TEMPLATE@@,$msg,g'"
+
+    while read -r key; do
+      value="$(get_value_from_key "$cfg_path" "$key")"
+      args="$args -e 's,@@$key@@,$value,g'"
+    done
+
+    eval "sed $args '$template'"
+  }
+}
+
+restart_services() {
+  local services="$1"
+  local service
+
+  for service in $(echo "$services" | tr ',' ' '); do
+    service "$service" restart
+  done
+}
+
+write_file() {
+  local cfg_path="$1"
+  local template="$2"
+  local conf="$3"
+  local conf_tmp
+  conf_tmp="${conf}.$(date +%s)"
+
+  render_template "$cfg_path" "$template" >"$conf_tmp"
+  mv -f "$conf_tmp" "$conf"
+}
+
+main "$@"
