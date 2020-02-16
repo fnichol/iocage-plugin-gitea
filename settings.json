@@ -1,4 +1,4 @@
 {
-	"servicerestart": "/usr/local/bin/plugin services restart",
-	"serviceget": "/usr/local/bin/plugin config get"
+  "servicerestart": "/usr/local/bin/plugin services restart",
+  "serviceget": "/usr/local/bin/plugin config get"
 }
