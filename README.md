@@ -15,6 +15,15 @@ solution written in Go.
 
 <!-- toc -->
 
+- [Code of Conduct](#code-of-conduct)
+- [Issues](#issues)
+- [Contributing](#contributing)
+- [Release History](#release-history)
+- [Authors](#authors)
+- [License](#license)
+
+<!-- tocstop -->
+
 ## Code of Conduct
 
 This project adheres to the Contributor Covenant [code of
