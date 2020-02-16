@@ -1,10 +1,16 @@
-CLI_SRC_URL := https://raw.githubusercontent.com/fnichol/iocage-plugin-cli/master/bin/plugin
-VENDORED_CLI := overlay/usr/local/bin/plugin
+include vendor/mk/base.mk
+include vendor/mk/shell.mk
+include vendor/mk/json.mk
+include vendor/mk/iocage_plugin.mk
 
-.PHONY: vendor-cli
-vendor-cli:
-	mkdir -p `dirname $(VENDORED_CLI)` \
-		&& fetch -o $(VENDORED_CLI) $(CLI_SRC_URL) \
-		&& chmod 0755 $(VENDORED_CLI) \
-		&& echo && $(VENDORED_CLI) --version \
-		&& echo "--> New version of iocage-plugin-cli is vendored in $(VENDORED_CLI)"
+build:
+.PHONY: build
+
+test: test-shell ## Runs all tests
+.PHONY: test
+
+check: check-shell check-json ## Checks all linting, styling, & other rules
+.PHONY: check
+
+clean: clean-shell ## Cleans up project
+.PHONY: clean
