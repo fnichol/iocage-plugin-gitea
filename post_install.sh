@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 
+log() {
+  echo "$1" >>/root/PLUGIN_INFO
+}
+
 plugin services set sshd nginx gitea
 
 gitea_work_dir=/var/db/gitea
@@ -30,15 +34,15 @@ mkdir -p "$gitea_work_dir/custom/conf" "$gitea_work_dir/data" \
   "$gitea_work_dir/log"
 chown -R "$gitea_user" "$gitea_work_dir"
 chmod -R 0750 "$gitea_work_dir"
-echo "Created initial state and data directories under $gitea_work_dir"
+log "Created initial state and data directories under $gitea_work_dir"
 
 rm -rf /usr/local/etc/gitea
 ln -s "$gitea_work_dir/custom" /usr/local/etc/gitea
-echo "Added /usr/local/etc/gitea symlink"
+log "Added /usr/local/etc/gitea symlink"
 
 rm -rf /var/log/gitea
 ln -s "$gitea_work_dir/log" /var/log/gitea
-echo "Added /var/log symlink"
+log "Added /var/log symlink"
 
 if ! grep -q '^start_precmd=' /usr/local/etc/rc.d/gitea >/dev/null; then
   ex /usr/local/etc/rc.d/gitea <<EOEX
@@ -57,7 +61,7 @@ gitea_prestart() {
 .
 wq!
 EOEX
-  echo "Modified gitea rc.d script with a start_precmd"
+  log "Modified gitea rc.d script with a start_precmd"
 fi
 
 if ! grep -q 'template render' /usr/local/etc/rc.d/nginx >/dev/null; then
@@ -82,26 +86,26 @@ i
 .
 wq!
 EOEX
-  echo "Modified nginx rc.d script to render config"
+  log "Modified nginx rc.d script to render config"
 fi
 
 # Enable the services
 sysrc -f /etc/rc.conf sshd_enable=YES
-echo "Enabled sshd service"
+log "Enabled sshd service"
 
 sysrc -f /etc/rc.conf nginx_enable=YES
-echo "Enabled nginx service"
+log "Enabled nginx service"
 
 sysrc -f /etc/rc.conf gitea_enable=YES
 sysrc -f /etc/rc.conf "gitea_shared=$gitea_work_dir"
-echo "Enabled gitea service"
+log "Enabled gitea service"
 
 # Start the services
 service sshd start
-echo "Started sshd service"
+log "Started sshd service"
 
 service nginx start
-echo "Started nginx service"
+log "Started nginx service"
 
 service gitea start
-echo "Started gitea service"
+log "Started gitea service"
