@@ -34,6 +34,9 @@ LFS_JWT_SECRET      = @@gitea_lfs_jwt_secret@@
 OFFLINE_MODE        = false
 STATIC_ROOT_PATH    = /usr/local/share/gitea
 
+[oauth2]
+JWT_SECRET = @@gitea_oauth2_jwt_secret@@
+
 [mailer]
 ENABLED = false
 
