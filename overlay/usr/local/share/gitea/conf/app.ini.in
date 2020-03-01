@@ -22,9 +22,9 @@ PATH     = @@gitea_work_dir@@/data/gitea.db
 ROOT = @@gitea_user_home@@/gitea-repositories
 
 [server]
+PROTOCOL            = unix
 DOMAIN              = @@gitea_domain@@
-HTTP_ADDR           = @@gitea_http_addr@@
-HTTP_PORT           = 3000
+HTTP_ADDR           = /tmp/gitea.sock
 ROOT_URL            = @@gitea_nginx_mode@@://%(DOMAIN)s/
 DISABLE_SSH         = false
 SSH_PORT            = 22

@@ -30,7 +30,6 @@ plugin config set gitea_oauth2_jwt_secret "$gitea_oauth2_jwt_secret"
 
 plugin config set gitea_app_name 'Gitea: Git with a cup of tea'
 plugin config set gitea_domain localhost
-plugin config set gitea_http_addr 127.0.0.1
 plugin config set gitea_nginx_mode http
 
 mkdir -p "$gitea_work_dir/custom/conf" "$gitea_work_dir/data" \

@@ -25,7 +25,7 @@ http {
     location / {
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
-      proxy_pass http://@@gitea_http_addr@@:3000;
+      proxy_pass http://unix:/tmp/gitea.sock:;
     }
   }
 }
